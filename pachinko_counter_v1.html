@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<title>パチンコ実戦カウンター</title>
+<style>
+:root{
+  --bg:#f3f4f6;--card:#fff;--text:#111827;--muted:#6b7280;--line:#d1d5db;
+  --primary:#111827;--primaryText:#fff;--danger:#b91c1c;--soft:#eef2ff;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif}
+main{max-width:760px;margin:0 auto;padding:14px 14px 40px}
+h1{font-size:1.35rem;margin:4px 0 14px}.sub{font-size:.85rem;color:var(--muted);margin-top:-8px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin:12px 0}
+.grid{display:grid;gap:10px}.grid2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:560px){.grid4{grid-template-columns:repeat(2,minmax(0,1fr))}.grid3{grid-template-columns:1fr}.grid2{grid-template-columns:repeat(2,minmax(0,1fr))}}
+label{display:block;font-size:.78rem;color:var(--muted)}
+input,select{width:100%;margin-top:5px;border:1px solid var(--line);border-radius:12px;padding:12px;font-size:16px;background:#fff;color:var(--text)}
+button{border:0;border-radius:14px;min-height:48px;font-size:1rem;font-weight:700;cursor:pointer}
+button:active{transform:translateY(1px)}
+.btnPrimary{background:var(--primary);color:var(--primaryText)}
+.btnGhost{background:#fff;border:1px solid var(--line);color:var(--text)}
+.btnDanger{background:#fff;border:1px solid #fecaca;color:var(--danger)}
+.counter{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px}
+.counterTitle{font-size:.85rem;color:var(--muted)}.counterValue{font-size:2rem;font-weight:800;line-height:1.1;margin:6px 0 10px}
+.counterActions{display:grid;grid-template-columns:1fr 2fr;gap:8px}.counterActions button{min-height:54px}
+.currentG{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}.bigG{font-size:2.4rem;font-weight:900}
+.stat{background:#f9fafb;border-radius:14px;padding:12px}.stat .k{font-size:.76rem;color:var(--muted)}.stat .v{font-size:1.25rem;font-weight:800;margin-top:4px}
+.historyRow{border-top:1px solid var(--line);padding:12px 0}.historyRow:first-child{border-top:0}
+.historyHead{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px}.route{font-weight:800}.route small{font-weight:600;color:var(--muted);margin-left:4px}
+.historyInputs{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end}
+.historyInputs button{min-height:44px;padding:0 13px}
+@media(max-width:520px){.historyInputs{grid-template-columns:1fr 1fr}.historyInputs button{grid-column:1/-1}}
+.notice{font-size:.8rem;color:var(--muted);line-height:1.55}.warn{color:var(--danger)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap}.toolbar button{padding:0 14px}
+hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+</style>
+</head>
+<body>
+<main>
+  <h1>パチンコ実戦カウンター</h1>
+  <div class="sub">解放ボタンでG数加算 → V入賞ボタンで当該Gを自動記録 → R数・出玉だけ追加入力</div>
+
+  <section class="card">
+    <div class="grid grid4">
+      <label>使用金額（円）<input id="cash" type="number" min="0" step="100" value="0"></label>
+      <label>貸玉 / 1,000円<input id="ballsPerK" type="number" min="1" value="250"></label>
+      <label>現在持ち玉<input id="currentBalls" type="number" min="0" value="0"></label>
+      <label>G補正<input id="gAdjust" type="number" step="1" value="0"></label>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="currentG">
+      <div><div class="counterTitle">現在ゲーム数</div><div id="currentGDisplay" class="bigG">0G</div></div>
+      <div class="notice">1解放＝+1G / 2解放＝+2G</div>
+    </div>
+    <hr>
+    <div class="grid grid2">
+      <div class="counter">
+        <div class="counterTitle">1解放チャッカー</div>
+        <div id="open1Display" class="counterValue">0</div>
+        <div class="counterActions"><button class="btnGhost" data-action="minus" data-key="open1">−1</button><button class="btnPrimary" data-action="plus" data-key="open1">＋1解放</button></div>
+      </div>
+      <div class="counter">
+        <div class="counterTitle">2解放チャッカー</div>
+        <div id="open2Display" class="counterValue">0</div>
+        <div class="counterActions"><button class="btnGhost" data-action="minus" data-key="open2">−1</button><button class="btnPrimary" data-action="plus" data-key="open2">＋2解放</button></div>
+      </div>
+      <div class="counter">
+        <div class="counterTitle">羽入賞</div>
+        <div id="haneDisplay" class="counterValue">0</div>
+        <div class="counterActions"><button class="btnGhost" data-action="minus" data-key="hane">−1</button><button class="btnPrimary" data-action="plus" data-key="hane">＋1</button></div>
+      </div>
+      <div class="counter">
+        <div class="counterTitle">SPルート</div>
+        <div id="spDisplay" class="counterValue">0</div>
+        <div class="counterActions"><button class="btnGhost" data-action="minus" data-key="sp">−1</button><button class="btnPrimary" data-action="plus" data-key="sp">＋1</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="grid grid2">
+      <div class="counter">
+        <div class="counterTitle">ノーマルルートV</div>
+        <div id="normalVDisplay" class="counterValue">0</div>
+        <div class="counterActions"><button class="btnGhost" data-action="minusV" data-route="normal">−1</button><button class="btnPrimary" data-action="v" data-route="normal">ノーマルV</button></div>
+      </div>
+      <div class="counter">
+        <div class="counterTitle">SPルートV</div>
+        <div id="spVDisplay" class="counterValue">0</div>
+        <div class="counterActions"><button class="btnGhost" data-action="minusV" data-route="sp">−1</button><button class="btnPrimary" data-action="v" data-route="sp">SP V</button></div>
+      </div>
+    </div>
+    <div id="vNotice" class="notice" style="margin-top:10px">Vボタンを押すと、その時点の現在Gを当たり履歴へ固定して現在Gを0に戻します。</div>
+  </section>
+
+  <section class="card">
+    <div style="font-weight:800;margin-bottom:8px">当たり履歴</div>
+    <div id="historyList"><div class="notice">まだ当たり履歴はありません。</div></div>
+  </section>
+
+  <section class="card">
+    <div style="font-weight:800;margin-bottom:10px">自動集計</div>
+    <div class="grid grid4">
+      <div class="stat"><div class="k">総ゲーム数</div><div id="totalG" class="v">0G</div></div>
+      <div class="stat"><div class="k">当たり回数</div><div id="hitCount" class="v">0回</div></div>
+      <div class="stat"><div class="k">平均当たりG</div><div id="avgG" class="v">—</div></div>
+      <div class="stat"><div class="k">1k回転率</div><div id="rate1k" class="v">—</div></div>
+    </div>
+    <hr>
+    <div class="grid grid2">
+      <div class="stat"><div class="k">1解放</div><div id="open1Stat" class="v">0</div></div>
+      <div class="stat"><div class="k">2解放</div><div id="open2Stat" class="v">0</div></div>
+      <div class="stat"><div class="k">羽入賞率</div><div id="haneRate" class="v">—</div></div>
+      <div class="stat"><div class="k">SPルート率</div><div id="spRate" class="v">—</div></div>
+      <div class="stat"><div class="k">ノーマルV</div><div id="normalVRate" class="v">—</div></div>
+      <div class="stat"><div class="k">SP V</div><div id="spVRate" class="v">—</div></div>
+      <div class="stat"><div class="k">獲得出玉合計</div><div id="payoutTotal" class="v">0発</div></div>
+      <div class="stat"><div class="k">持ち玉差</div><div id="ballDiff" class="v">0発</div></div>
+    </div>
+    <div id="summaryNotice" class="notice" style="margin-top:10px"></div>
+  </section>
+
+  <section class="card">
+    <div class="toolbar">
+      <button id="newSession" class="btnDanger" type="button">新しい実戦を開始</button>
+      <button id="copySummary" class="btnGhost" type="button">集計文を表示</button>
+    </div>
+    <div id="textSummary" class="notice" style="white-space:pre-wrap;margin-top:10px"></div>
+  </section>
+</main>
+
+<script>
+(()=>{
+'use strict';
+const STORAGE_KEY='pachi-counter-v1';
+const defaultState={
+  cash:0,ballsPerK:250,currentBalls:0,gAdjust:0,
+  open1:0,open2:0,hane:0,sp:0,normalV:0,spV:0,
+  currentG:0,history:[]
+};
+let state=load();
+const $=id=>document.getElementById(id);
+
+function load(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(!raw)return structuredClone(defaultState);
+    const parsed=JSON.parse(raw);
+    return {...structuredClone(defaultState),...parsed,history:Array.isArray(parsed.history)?parsed.history:[]};
+  }catch(e){return structuredClone(defaultState)}
+}
+function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
+function num(v){const n=Number(v);return Number.isFinite(n)?n:0}
+function clamp0(v){return Math.max(0,Math.round(num(v)))}
+function pct(a,b){return b>0?(a/b*100).toFixed(1)+'%':'—'}
+function oneIn(success,attempts){if(success<=0||attempts<=0)return '—';return '1/'+(attempts/success).toFixed(2).replace(/\.00$/,'')}
+
+function syncForm(){
+  $('cash').value=state.cash;$('ballsPerK').value=state.ballsPerK;$('currentBalls').value=state.currentBalls;$('gAdjust').value=state.gAdjust;
+}
+function render(){
+  $('currentGDisplay').textContent=state.currentG+'G';
+  $('open1Display').textContent=state.open1;$('open2Display').textContent=state.open2;$('haneDisplay').textContent=state.hane;$('spDisplay').textContent=state.sp;
+  $('normalVDisplay').textContent=state.normalV;$('spVDisplay').textContent=state.spV;
+  renderHistory();renderStats();save();
+}
+function renderHistory(){
+  const list=$('historyList');
+  if(!state.history.length){list.innerHTML='<div class="notice">まだ当たり履歴はありません。</div>';return}
+  list.innerHTML='';
+  state.history.forEach((row,i)=>{
+    const div=document.createElement('div');div.className='historyRow';
+    const routeLabel=row.route==='sp'?'SP V':'ノーマルV';
+    div.innerHTML=`<div class="historyHead"><div><span class="route">${i+1}. ${row.games}G</span><small>${routeLabel}</small></div><button class="btnDanger" type="button" data-delete="${row.id}" style="min-height:36px;padding:0 10px;font-size:.82rem">削除</button></div>
+      <div class="historyInputs">
+        <label>R数<input type="number" min="0" step="1" value="${row.rounds ?? ''}" data-field="rounds" data-id="${row.id}" placeholder="例 4"></label>
+        <label>獲得出玉<input type="number" min="0" step="1" value="${row.balls ?? ''}" data-field="balls" data-id="${row.id}" placeholder="例 420"></label>
+        <button class="btnGhost" type="button" data-save-row="${row.id}">保存</button>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+function renderStats(){
+  const hitGames=state.history.reduce((s,r)=>s+clamp0(r.games),0);
+  const totalG=hitGames+state.currentG+num(state.gAdjust);
+  const payout=state.history.reduce((s,r)=>s+clamp0(r.balls),0);
+  const hits=state.history.length;
+  const normalAttempts=Math.max(0,state.hane-state.sp);
+  const purchased=num(state.cash)/1000*Math.max(1,num(state.ballsPerK));
+  const used=Math.max(0,purchased+payout-num(state.currentBalls));
+  const equivalentK=used/Math.max(1,num(state.ballsPerK));
+  const rate=equivalentK>0?totalG/equivalentK:0;
+  $('totalG').textContent=Math.max(0,totalG).toLocaleString()+'G';
+  $('hitCount').textContent=hits+'回';
+  $('avgG').textContent=hits?(hitGames/hits).toFixed(1)+'G':'—';
+  $('rate1k').textContent=equivalentK>0?rate.toFixed(2)+'G':'—';
+  $('open1Stat').textContent=state.open1+'回';$('open2Stat').textContent=state.open2+'回';
+  $('haneRate').textContent=state.hane+' / '+Math.max(0,totalG)+'G ('+pct(state.hane,Math.max(0,totalG))+')';
+  $('spRate').textContent=state.sp+' / '+state.hane+' ('+pct(state.sp,state.hane)+')';
+  $('normalVRate').textContent=state.normalV+' / '+normalAttempts+' ('+pct(state.normalV,normalAttempts)+', '+oneIn(state.normalV,normalAttempts)+')';
+  $('spVRate').textContent=state.spV+' / '+state.sp+' ('+pct(state.spV,state.sp)+', '+oneIn(state.spV,state.sp)+')';
+  $('payoutTotal').textContent=payout.toLocaleString()+'発';
+  const diff=num(state.currentBalls)-purchased;$('ballDiff').textContent=(diff>=0?'+':'')+Math.round(diff).toLocaleString()+'発';
+  const notes=[];
+  if(state.sp>state.hane)notes.push('SPルート回数が羽入賞回数を超えています。');
+  if(state.normalV+state.spV!==hits)notes.push('Vカウントと履歴件数が一致していません。');
+  $('summaryNotice').textContent=notes.join(' ');
+}
+function addV(route){
+  const g=clamp0(state.currentG);
+  if(route==='sp')state.spV++;else state.normalV++;
+  state.history.push({id:Date.now()+Math.random(),games:g,route,rounds:'',balls:''});
+  state.currentG=0;
+  $('vNotice').textContent=`${g}Gで${route==='sp'?'SP V':'ノーマルV'}を記録しました。R数と出玉を履歴へ入力してください。`;
+  render();
+}
+function removeV(route){
+  if(route==='sp')state.spV=Math.max(0,state.spV-1);else state.normalV=Math.max(0,state.normalV-1);
+  render();
+}
+function changeCounter(key,delta){
+  state[key]=Math.max(0,clamp0(state[key])+delta);
+  if(key==='open1')state.currentG=Math.max(0,state.currentG+delta);
+  if(key==='open2')state.currentG=Math.max(0,state.currentG+2*delta);
+  render();
+}
+
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  const action=b.dataset.action;
+  if(action==='plus')changeCounter(b.dataset.key,1);
+  if(action==='minus')changeCounter(b.dataset.key,-1);
+  if(action==='v')addV(b.dataset.route);
+  if(action==='minusV')removeV(b.dataset.route);
+  if(b.dataset.saveRow){
+    $('vNotice').textContent='履歴を保存しました。';render();
+  }
+  if(b.dataset.delete){
+    const id=Number(b.dataset.delete);const row=state.history.find(r=>r.id===id);
+    if(row){if(row.route==='sp')state.spV=Math.max(0,state.spV-1);else state.normalV=Math.max(0,state.normalV-1)}
+    state.history=state.history.filter(r=>r.id!==id);render();
+  }
+});
+
+document.addEventListener('input',e=>{
+  if(['cash','ballsPerK','currentBalls','gAdjust'].includes(e.target.id)){
+    state[e.target.id]=num(e.target.value);render();return;
+  }
+  const id=e.target.dataset.id;const field=e.target.dataset.field;
+  if(id&&field){const row=state.history.find(r=>String(r.id)===String(id));if(row){row[field]=e.target.value;save();renderStats();save()}}
+});
+
+$('newSession').addEventListener('click',()=>{
+  if(!confirm('現在の実戦データをすべて消して、新しい実戦を開始しますか？'))return;
+  state=structuredClone(defaultState);syncForm();$('textSummary').textContent='';$('vNotice').textContent='Vボタンを押すと、その時点の現在Gを当たり履歴へ固定して現在Gを0に戻します。';render();
+});
+$('copySummary').addEventListener('click',()=>{
+  const hitLines=state.history.map(r=>`${r.games}G ${r.rounds||'-'}R ${r.balls||'-'}発 ${r.route==='sp'?'SP V':'ノーマルV'}`).join('\n');
+  const hitGames=state.history.reduce((s,r)=>s+clamp0(r.games),0);const totalG=hitGames+state.currentG+num(state.gAdjust);const normalAttempts=Math.max(0,state.hane-state.sp);const payout=state.history.reduce((s,r)=>s+clamp0(r.balls),0);
+  const purchased=num(state.cash)/1000*Math.max(1,num(state.ballsPerK));const used=Math.max(0,purchased+payout-num(state.currentBalls));const rate=used>0?totalG/(used/Math.max(1,num(state.ballsPerK))):0;
+  $('textSummary').textContent=`使用金額 ${num(state.cash).toLocaleString()}円\n${hitLines||'当たり履歴なし'}\n\n1解放 ${state.open1}回\n2解放 ${state.open2}回\n羽入賞 ${state.hane}回 (${pct(state.hane,totalG)})\nSPルート ${state.sp}回 (${state.sp}/${state.hane})\nノーマルV ${state.normalV}回 (${state.normalV}/${normalAttempts}, ${oneIn(state.normalV,normalAttempts)})\nSP V ${state.spV}回 (${state.spV}/${state.sp}, ${oneIn(state.spV,state.sp)})\n\n計 ${totalG}G${state.history.length?' 平均'+(hitGames/state.history.length).toFixed(1)+'G':''}\n現在持ち玉 ${num(state.currentBalls).toLocaleString()}発\n1kあたりの回転率 ${rate?rate.toFixed(2):'—'}`;
+});
+
+syncForm();render();
+})();
+</script>
+</body>
+</html>
