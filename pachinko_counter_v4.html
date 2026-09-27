@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f6f7f9">
+<title>パチンコ実戦カウンター v4</title>
+<style>
+:root{
+  --bg:#f6f7f9;--card:#fff;--text:#14171c;--muted:#707782;--line:#d9dde3;
+  --soft:#f1f3f6;--dark:#20242b;--dark2:#303640;--danger:#b42318;--ok:#177245;
+  --normal:#eef2f7;--sp:#f5f0e8;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif;-webkit-tap-highlight-color:transparent}
+button,input{font:inherit}
+button{touch-action:manipulation}
+.app{max-width:760px;margin:0 auto;padding:8px 10px 34px}
+.view{display:none}.view.active{display:block}
+.topbar{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.topbar button{min-height:42px}
+.infoBtn{flex:1;border:1px solid var(--line);background:#fff;border-radius:12px;font-weight:800;color:var(--text);padding:0 12px;text-align:left;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.miniBtn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:0 12px;font-weight:700;color:var(--text)}
+.sessionStamp{font-size:.72rem;color:var(--muted);padding:0 3px 5px;display:flex;justify-content:space-between;gap:8px;white-space:nowrap}
+.sessionStamp span{overflow:hidden;text-overflow:ellipsis}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:10px;margin:8px 0}
+.investRow{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:7px;align-items:center}
+.labelStrong{font-size:.88rem;font-weight:800;white-space:nowrap}
+.moneyInput,.smallInput{border:1px solid var(--line);background:#fff;border-radius:10px;min-width:0;height:42px;padding:0 9px;font-size:16px;text-align:right;color:var(--text)}
+.moneyInput{width:100%}.yen{font-size:.88rem;color:var(--muted);margin-left:-2px}
+.plus500{height:42px;border:0;border-radius:10px;background:var(--dark);color:#fff;font-weight:900;padding:0 15px;white-space:nowrap}
+.holdRow{margin-top:7px;display:flex;justify-content:flex-end;align-items:center;gap:6px;font-size:.76rem;color:var(--muted)}
+.holdRow input{width:92px;height:34px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0}
+.stat{background:#fff;border:1px solid var(--line);border-radius:13px;padding:8px 9px;min-width:0}
+.statK{font-size:.71rem;color:var(--muted);white-space:nowrap}.statV{font-size:1.13rem;font-weight:900;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.actionGrid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px}
+.actionGrid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:6px}
+.countBtn{border:1px solid var(--line);border-radius:13px;background:#fff;min-height:67px;padding:7px 3px;color:var(--text);font-weight:900;display:flex;flex-direction:column;justify-content:center;align-items:center;line-height:1.08}
+.countBtn .count{font-size:1.23rem;margin-top:6px}.countBtn:active{background:var(--soft)}
+.countBtn.normal{background:var(--normal)}.countBtn.sp{background:var(--sp)}
+.vBtn{min-height:54px;border:0;border-radius:13px;background:var(--dark2);color:#fff;font-weight:900;font-size:1rem;display:flex;justify-content:center;align-items:center;gap:8px}
+.vBtn .vcount{font-size:.85rem;font-weight:700;opacity:.82}
+.hitPanel{padding:9px 10px}
+.hitTop{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:center;margin-bottom:7px}
+.roundAverage{display:flex;align-items:baseline;gap:6px;white-space:nowrap}.roundAverage span{font-size:.72rem;color:var(--muted);font-weight:700}.roundAverage strong{font-size:1.08rem;font-weight:900}.hitTop input{text-align:right}
+.roundNote{font-size:.66rem;color:var(--muted);margin-top:6px;text-align:right}
+.roundGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.roundBtn{min-height:52px;border:1px solid var(--line);background:#fff;border-radius:13px;font-weight:900;color:var(--text);line-height:1.05}
+.roundBtn small{display:block;font-size:.68rem;color:var(--muted);font-weight:700;margin-top:4px}
+.currentLine{display:grid;grid-template-columns:.9fr 1.1fr 1fr;gap:6px;margin:8px 0}
+.readout{border:1px solid var(--line);background:#fff;border-radius:12px;padding:8px 7px;text-align:center;min-width:0}
+.readout .k{font-size:.66rem;color:var(--muted)}.readout .v{font-size:1rem;font-weight:900;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.todayPanel{padding:9px 10px}
+.sectionHead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:5px}
+.sectionTitle{font-size:.9rem;font-weight:900}.sectionMeta{font-size:.72rem;color:var(--muted)}
+.todayList{display:grid;gap:1px}
+.todayRow{display:grid;grid-template-columns:42px 1fr 1fr 1fr auto;gap:5px;align-items:center;border-top:1px solid #eceff3;padding:7px 2px;font-size:.86rem}
+.todayRow:first-child{border-top:0}.todayNo{font-size:.68rem;color:var(--muted)}.todayMain{font-weight:900}.todaySub{text-align:right}.editTiny{border:0;background:transparent;color:var(--muted);font-size:.75rem;padding:6px 4px}
+.empty{font-size:.8rem;color:var(--muted);padding:8px 1px}
+.bottomActions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}
+.bottomActions button{min-height:44px;border-radius:12px;font-weight:800}
+.endBtn{border:1px solid #efc4c0;background:#fff;color:var(--danger)}
+.pastBtn{border:1px solid var(--line);background:#fff;color:var(--text)}
+.newBtn{grid-column:1/-1;border:0;background:var(--dark);color:#fff}
+.note{font-size:.72rem;color:var(--muted);line-height:1.45;margin:7px 2px 0}
+.endedBanner{background:#eef7f1;color:var(--ok);border:1px solid #cce5d5;border-radius:12px;padding:8px 10px;font-size:.82rem;font-weight:800;margin:8px 0}
+/* sub pages */
+.pageHead{display:flex;align-items:center;gap:8px;margin:4px 0 10px}.backBtn{min-width:58px;height:42px;border:1px solid var(--line);border-radius:12px;background:#fff;font-weight:800}.pageTitle{font-size:1.05rem;font-weight:900}
+.formCard{background:#fff;border:1px solid var(--line);border-radius:15px;padding:12px;margin-bottom:10px}.formGrid{display:grid;gap:10px}.formGrid label{font-size:.78rem;color:var(--muted);font-weight:700}.formGrid input{width:100%;height:44px;border:1px solid var(--line);border-radius:11px;padding:0 11px;font-size:16px;margin-top:4px}.saveBtn{width:100%;height:46px;border:0;border-radius:12px;background:var(--dark);color:#fff;font-weight:900;margin-top:12px}
+.subtle{font-size:.75rem;color:var(--muted);line-height:1.5}
+.aggregate{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.aggCell{background:var(--soft);border-radius:11px;padding:8px}.aggCell .k{font-size:.68rem;color:var(--muted)}.aggCell .v{font-size:.95rem;font-weight:900;margin-top:2px}
+.savedList{display:grid;gap:8px}.savedItem{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px}.savedTop{display:flex;justify-content:space-between;gap:8px}.savedName{font-weight:900;font-size:.88rem;line-height:1.35}.savedTime{font-size:.69rem;color:var(--muted);white-space:nowrap}.savedStats{font-size:.77rem;color:#424852;line-height:1.55;margin-top:6px}.savedActions{display:flex;gap:6px;margin-top:7px}.savedActions button{min-height:35px;border:1px solid var(--line);background:#fff;border-radius:9px;padding:0 9px;font-size:.74rem;font-weight:800}.savedActions .delete{color:var(--danger);border-color:#efc4c0}
+.filterGrid{display:grid;grid-template-columns:1fr 1fr .75fr;gap:6px}.filterGrid input{min-width:0;width:100%;height:38px;border:1px solid var(--line);border-radius:9px;padding:0 8px;font-size:16px}.filterBtns{display:flex;gap:6px;margin-top:7px}.filterBtns button{height:38px;border-radius:9px;border:1px solid var(--line);background:#fff;padding:0 10px;font-size:.78rem;font-weight:800}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.36);display:none;align-items:center;justify-content:center;padding:18px;z-index:20}.modal.show{display:flex}.modalCard{width:min(430px,100%);background:#fff;border-radius:17px;padding:15px;box-shadow:0 16px 50px rgba(0,0,0,.16)}.modalTitle{font-weight:900;font-size:1rem}.modalText{font-size:.82rem;color:var(--muted);line-height:1.55;margin:8px 0 13px}.modalActions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.modalActions button{height:44px;border-radius:11px;font-weight:900}.cancelBtn{border:1px solid var(--line);background:#fff}.confirmEnd{border:0;background:var(--danger);color:#fff}
+.editGrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin:10px 0}.editGrid label{font-size:.7rem;color:var(--muted)}.editGrid input{width:100%;height:40px;margin-top:4px;border:1px solid var(--line);border-radius:9px;padding:0 7px;font-size:16px}
+@media(max-width:390px){
+ .app{padding-left:7px;padding-right:7px}.panel{margin:6px 0;padding:8px}.investRow{grid-template-columns:auto minmax(0,1fr) auto}.plus500{padding:0 11px}.countBtn{min-height:62px;font-size:.83rem}.countBtn .count{font-size:1.08rem}.vBtn{min-height:49px}.roundBtn{min-height:49px}.statV{font-size:1.02rem}.todayRow{grid-template-columns:30px 1fr 1fr 1fr auto;gap:3px;font-size:.8rem}.currentLine{gap:4px}.readout{padding:7px 4px}.readout .v{font-size:.9rem}
+}
+button:disabled,input:disabled{opacity:.45}
+</style>
+</head>
+<body>
+<div class="app">
+  <main id="mainView" class="view active">
+    <div class="topbar">
+      <button id="machineInfoBtn" class="infoBtn" type="button">台情報入力</button>
+    </div>
+    <div class="sessionStamp"><span id="machineSummary">店舗・機種・台番号は後から入力できます</span><span id="timeSummary">未開始</span></div>
+
+    <section class="panel">
+      <div class="investRow">
+        <span class="labelStrong">投資金額</span>
+        <input id="cashInput" class="moneyInput" type="number" min="0" step="100" inputmode="numeric" value="0" aria-label="投資金額">
+        <span class="yen">円</span>
+        <button id="plus500Btn" class="plus500 playControl" type="button">＋500</button>
+      </div>
+      <div class="holdRow">現在持ち玉 <input id="currentBallsInput" class="smallInput" type="number" min="0" inputmode="numeric" value="0" aria-label="現在持ち玉"> 発</div>
+    </section>
+
+    <div class="stats">
+      <div class="stat"><div class="statK">総ゲーム数</div><div id="totalGStat" class="statV">0G</div></div>
+      <div class="stat"><div class="statK">総当たり回数</div><div id="totalHitStat" class="statV">0回</div></div>
+      <div class="stat"><div class="statK">1000円あたり</div><div id="rate1kStat" class="statV">—</div></div>
+      <div class="stat"><div class="statK">大当たり確率</div><div id="jackpotStat" class="statV">—</div></div>
+    </div>
+
+    <div class="actionGrid4" aria-label="メインカウンター">
+      <button class="countBtn playControl" type="button" data-action="open1"><span>1解放</span><span id="open1Count" class="count">0</span></button>
+      <button class="countBtn playControl" type="button" data-action="open2"><span>2解放</span><span id="open2Count" class="count">0</span></button>
+      <button class="countBtn normal playControl" type="button" data-action="normal"><span>ノーマル</span><span id="normalCount" class="count">0</span></button>
+      <button class="countBtn sp playControl" type="button" data-action="sp"><span>SP</span><span id="spCount" class="count">0</span></button>
+    </div>
+
+    <div class="actionGrid2">
+      <button class="vBtn playControl" type="button" data-action="normalV">ノーマルV <span id="normalVCount" class="vcount">0</span></button>
+      <button class="vBtn playControl" type="button" data-action="spV">SP V <span id="spVCount" class="vcount">0</span></button>
+    </div>
+
+    <section class="panel hitPanel">
+      <div class="hitTop">
+        <div class="roundAverage"><span>1R平均</span><strong id="avgPerRound">—</strong></div>
+        <input id="manualPayout" class="smallInput playControl" type="number" min="0" inputmode="numeric" placeholder="獲得出玉を手動入力" aria-label="獲得出玉を手動入力">
+      </div>
+      <div class="roundGrid">
+        <button class="roundBtn playControl" type="button" data-round="2" data-default-payout="230">2R<small>230発</small></button>
+        <button class="roundBtn playControl" type="button" data-round="4" data-default-payout="420">4R<small>420発</small></button>
+        <button class="roundBtn playControl" type="button" data-round="9" data-default-payout="1000">9R<small>1000発</small></button>
+      </div>
+      <div class="roundNote">※獲得出玉が未入力なら規定値</div>
+    </section>
+
+    <div class="currentLine">
+      <div class="readout"><div class="k">当該G数</div><div id="currentGReadout" class="v">0G</div></div>
+      <div class="readout"><div class="k">ノーマル</div><div id="normalRatio" class="v">0/0</div></div>
+      <div class="readout"><div class="k">SP</div><div id="spRatio" class="v">0/0</div></div>
+    </div>
+
+    <section class="panel todayPanel">
+      <div class="sectionHead"><div class="sectionTitle">当日の記録</div><div id="todayMeta" class="sectionMeta">0件</div></div>
+      <div id="todayList" class="todayList"><div class="empty">まだ当たり記録はありません。</div></div>
+    </section>
+
+    <div id="endedBanner" class="endedBanner" hidden></div>
+    <div class="bottomActions">
+      <button id="endSessionBtn" class="endBtn" type="button">実戦終了</button>
+      <button id="pastRecordsBtn" class="pastBtn" type="button">過去実戦記録</button>
+      <button id="newSessionBtn" class="newBtn" type="button" hidden>新しい実戦を開始</button>
+    </div>
+    <div class="note">開始時刻は最初の「1解放」または「2解放」を押した瞬間に自動打刻します。Rボタンを押すと当たり確定となり、当該G数を記録して0Gへ戻します。</div>
+  </main>
+
+  <section id="machineView" class="view">
+    <div class="pageHead"><button class="backBtn" type="button" data-back-main>戻る</button><div class="pageTitle">台情報入力</div></div>
+    <div class="formCard">
+      <div class="formGrid">
+        <label>店舗名<input id="storeNameInput" type="text" maxlength="80" placeholder="例：○○店"></label>
+        <label>機種名<input id="machineNameInput" type="text" maxlength="100" placeholder="例：○○○"></label>
+        <label>台番号<input id="machineNumberInput" type="text" maxlength="30" inputmode="numeric" placeholder="例：123"></label>
+        <label>1,000円あたり貸玉数<input id="ballsPerKInput" type="number" min="1" value="250" inputmode="decimal"></label>
+      </div>
+      <button id="saveMachineBtn" class="saveBtn" type="button">保存して戻る</button>
+      <div class="subtle" style="margin-top:9px">台情報を入力しても実戦開始にはなりません。開始時刻は解放ボタンを最初に押した時点で記録します。</div>
+    </div>
+  </section>
+
+  <section id="pastView" class="view">
+    <div class="pageHead"><button class="backBtn" type="button" data-back-main>戻る</button><div class="pageTitle">過去実戦記録</div></div>
+
+    <div class="formCard">
+      <div class="sectionTitle">同一台を集計</div>
+      <div class="filterGrid" style="margin-top:8px">
+        <input id="filterStore" type="text" placeholder="店舗名">
+        <input id="filterMachine" type="text" placeholder="機種名">
+        <input id="filterNumber" type="text" placeholder="台番号">
+      </div>
+      <div class="filterBtns"><button id="useCurrentMachineBtn" type="button">現在の台情報を入れる</button><button id="aggregateBtn" type="button">集計する</button></div>
+      <div id="aggregateArea" style="margin-top:9px"><div class="subtle">店舗名・機種名・台番号が完全一致する直近50実戦を集計します。</div></div>
+    </div>
+
+    <div class="sectionHead"><div class="sectionTitle">保存済み実戦</div><div id="pastCount" class="sectionMeta">0件</div></div>
+    <div id="savedList" class="savedList"><div class="empty">保存済み実戦はありません。</div></div>
+  </section>
+</div>
+
+<div id="endModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="endModalTitle">
+  <div class="modalCard">
+    <div id="endModalTitle" class="modalTitle">実戦を終了しますか？</div>
+    <div class="modalText">「はい」を押した時点の端末時刻を終了時刻として打刻し、過去実戦記録へ保存します。</div>
+    <div class="modalActions"><button id="cancelEndBtn" class="cancelBtn" type="button">キャンセル</button><button id="confirmEndBtn" class="confirmEnd" type="button">はい、終了する</button></div>
+  </div>
+</div>
+
+<div id="editModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+  <div class="modalCard">
+    <div id="editModalTitle" class="modalTitle">当たり記録を編集</div>
+    <div class="editGrid">
+      <label>G数<input id="editGames" type="number" min="0" inputmode="numeric"></label>
+      <label>出玉<input id="editPayout" type="number" min="0" inputmode="numeric"></label>
+      <label>R数<input id="editRounds" type="number" min="0" inputmode="numeric"></label>
+    </div>
+    <div class="modalActions"><button id="deleteHitBtn" class="cancelBtn" type="button" style="color:var(--danger)">削除</button><button id="saveHitBtn" class="confirmEnd" type="button" style="background:var(--dark)">保存</button></div>
+    <button id="closeEditBtn" type="button" class="miniBtn" style="width:100%;height:40px;margin-top:8px">閉じる</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+(() => {
+const ACTIVE_KEY='pachi-counter-v4-active';
+const SESSIONS_KEY='pachi-counter-v4-sessions';
+const MIGRATION_KEY='pachi-counter-v4-migrated';
+const V3_ACTIVE_KEY='pachi-counter-v3-active';
+const V3_SESSIONS_KEY='pachi-counter-v3-sessions';
+const V2_ACTIVE_KEY='pachi-counter-v2-active';
+const V2_SESSIONS_KEY='pachi-counter-v2-sessions';
+const MAX_PER_MACHINE=50;
+const MAX_ANON=50;
+
+const $=id=>document.getElementById(id);
+const clone=o=>JSON.parse(JSON.stringify(o));
+const num=v=>{const n=Number(v);return Number.isFinite(n)?n:0};
+const int0=v=>Math.max(0,Math.round(num(v)));
+const normalize=v=>String(v||'').trim().replace(/\s+/g,' ').toLowerCase();
+const makeId=()=>Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,9);
+const nowIso=()=>new Date().toISOString();
+const defaultState=()=>({
+  sessionId:makeId(),status:'idle',startedAt:null,endedAt:null,
+  storeName:'',machineName:'',machineNumber:'',ballsPerK:250,
+  cash:0,currentBalls:0,currentG:0,totalG:0,
+  open1:0,open2:0,normal:0,sp:0,normalV:0,spV:0,
+  history:[]
+});
+
+function machineKey(o){
+  const s=normalize(o.storeName),m=normalize(o.machineName),n=normalize(o.machineNumber);
+  return s&&m&&n?`${s}||${m}||${n}`:'';
+}
+function localDateTime(iso){
+  if(!iso)return null;const d=new Date(iso);if(Number.isNaN(d.getTime()))return null;
+  const p=n=>String(n).padStart(2,'0');
+  return {date:`${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())}`,time:`${p(d.getHours())}:${p(d.getMinutes())}`,full:`${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`};
+}
+function durationText(a,b){
+  if(!a||!b)return '—';const ms=Math.max(0,new Date(b)-new Date(a));const min=Math.floor(ms/60000);const h=Math.floor(min/60),m=min%60;return h?`${h}時間${m}分`:`${m}分`;
+}
+function oneIn(success,total){return success>0&&total>0?`1/${(total/success).toFixed(2).replace(/\.00$/,'')}`:'—'}
+function payoutTotal(o){return (o.history||[]).reduce((s,r)=>s+int0(r.payout),0)}
+function roundTotal(o){return (o.history||[]).reduce((s,r)=>s+int0(r.rounds),0)}
+function avgPayoutPerRound(o){const rounds=roundTotal(o);return rounds>0?payoutTotal(o)/rounds:null}
+function formatPerRound(v){if(v==null)return '—';return `${v.toFixed(1).replace(/\.0$/,'')}発`}
+function calcRate1k(o){
+  const bpk=Math.max(1,num(o.ballsPerK)||250);const bought=num(o.cash)/1000*bpk;const used=bought+payoutTotal(o)-num(o.currentBalls);
+  if(used<=0||num(o.totalG)<=0)return null;return num(o.totalG)/(used/bpk);
+}
+function snapshotStats(o){
+  const hits=(o.history||[]).length;const totalG=int0(o.totalG);const rate=calcRate1k(o);
+  const rounds=roundTotal(o);return {hits,totalG,rate,jackpot:hits>0?totalG/hits:null,payout:payoutTotal(o),rounds,avgPerRound:rounds>0?payoutTotal(o)/rounds:null};
+}
+function sanitizeState(raw){
+  const d=defaultState();const o={...d,...(raw||{})};
+  o.history=Array.isArray(raw&&raw.history)?raw.history.map(r=>({id:r.id||makeId(),games:int0(r.games),payout:int0(r.payout??r.balls),rounds:int0(r.rounds)})):[];
+  o.open1=int0(o.open1);o.open2=int0(o.open2);o.normal=int0(o.normal);o.sp=int0(o.sp);o.normalV=int0(o.normalV);o.spV=int0(o.spV);o.currentG=int0(o.currentG);
+  o.totalG=int0(o.totalG)||o.history.reduce((s,r)=>s+r.games,0)+o.currentG;o.cash=Math.max(0,num(o.cash));o.currentBalls=Math.max(0,num(o.currentBalls));o.ballsPerK=Math.max(1,num(o.ballsPerK)||250);
+  return o;
+}
+function convertV2(o){
+  if(!o)return null;const history=Array.isArray(o.history)?o.history.map(r=>({id:r.id||makeId(),games:int0(r.games),payout:int0(r.balls),rounds:int0(r.rounds)})):[];
+  const normal=Math.max(0,int0(o.hane)-int0(o.sp));
+  return sanitizeState({
+    sessionId:o.sessionId||makeId(),status:o.status||'idle',startedAt:o.startedAt||null,endedAt:o.endedAt||null,
+    storeName:o.storeName||'',machineName:o.machineName||'',machineNumber:o.machineNumber||'',ballsPerK:num(o.ballsPerK)||250,
+    cash:num(o.cash),currentBalls:num(o.currentBalls),currentG:int0(o.currentG),totalG:history.reduce((s,r)=>s+r.games,0)+int0(o.currentG),
+    open1:int0(o.open1),open2:int0(o.open2),normal,sp:int0(o.sp),normalV:int0(o.normalV),spV:int0(o.spV),history
+  });
+}
+function migratePreviousOnce(){
+  if(localStorage.getItem(MIGRATION_KEY))return;
+  try{
+    const existingSessions=JSON.parse(localStorage.getItem(SESSIONS_KEY)||'[]');
+    if(Array.isArray(existingSessions)&&existingSessions.length===0){
+      const v3Sessions=JSON.parse(localStorage.getItem(V3_SESSIONS_KEY)||'[]');
+      if(Array.isArray(v3Sessions)&&v3Sessions.length){
+        localStorage.setItem(SESSIONS_KEY,JSON.stringify(v3Sessions.map(sanitizeState)));
+      }else{
+        const v2Sessions=JSON.parse(localStorage.getItem(V2_SESSIONS_KEY)||'[]');
+        if(Array.isArray(v2Sessions)&&v2Sessions.length){
+          localStorage.setItem(SESSIONS_KEY,JSON.stringify(v2Sessions.map(convertV2).filter(Boolean)));
+        }
+      }
+    }
+    if(!localStorage.getItem(ACTIVE_KEY)){
+      const v3Active=JSON.parse(localStorage.getItem(V3_ACTIVE_KEY)||'null');
+      if(v3Active){
+        localStorage.setItem(ACTIVE_KEY,JSON.stringify(sanitizeState(v3Active)));
+      }else{
+        const v2Active=JSON.parse(localStorage.getItem(V2_ACTIVE_KEY)||'null');
+        if(v2Active){const converted=convertV2(v2Active);if(converted)localStorage.setItem(ACTIVE_KEY,JSON.stringify(converted));}
+      }
+    }
+  }catch(e){}
+  localStorage.setItem(MIGRATION_KEY,'1');
+}
+migratePreviousOnce();
+function loadState(){try{return sanitizeState(JSON.parse(localStorage.getItem(ACTIVE_KEY)||'null'))}catch(e){return defaultState()}}
+function loadSessions(){try{const a=JSON.parse(localStorage.getItem(SESSIONS_KEY)||'[]');return Array.isArray(a)?a.map(sanitizeState):[]}catch(e){return []}}
+let state=loadState();let sessions=loadSessions();let editingHitId=null;
+function saveState(){localStorage.setItem(ACTIVE_KEY,JSON.stringify(state))}
+function saveSessions(){localStorage.setItem(SESSIONS_KEY,JSON.stringify(sessions))}
+function setView(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));window.scrollTo(0,0)}
+function ensureStarted(trigger){
+  if(state.status==='ended')return false;
+  if(!state.startedAt&&(trigger==='open1'||trigger==='open2')){state.startedAt=nowIso();state.status='active'}
+  return true;
+}
+function playEnabled(){return state.status!=='ended'}
+function formatRate(v){return v==null?'—':`${v.toFixed(2)}G`}
+function render(){
+  $('cashInput').value=String(Math.round(state.cash));$('currentBallsInput').value=String(Math.round(state.currentBalls));
+  $('open1Count').textContent=state.open1;$('open2Count').textContent=state.open2;$('normalCount').textContent=state.normal;$('spCount').textContent=state.sp;
+  $('normalVCount').textContent=state.normalV;$('spVCount').textContent=state.spV;
+  $('currentGReadout').textContent=`${state.currentG}G`;$('normalRatio').textContent=`${state.normalV}/${state.normal}`;$('spRatio').textContent=`${state.spV}/${state.sp}`;
+  const st=snapshotStats(state);$('totalGStat').textContent=`${st.totalG}G`;$('totalHitStat').textContent=`${st.hits}回`;$('rate1kStat').textContent=formatRate(st.rate);$('jackpotStat').textContent=st.jackpot?`1/${st.jackpot.toFixed(2).replace(/\.00$/,'')}`:'—';
+  $('avgPerRound').textContent=formatPerRound(st.avgPerRound);
+  const info=[state.storeName,state.machineName,state.machineNumber?`${state.machineNumber}番台`:null].filter(Boolean).join(' / ');$('machineSummary').textContent=info||'店舗・機種・台番号は後から入力できます';
+  const sp=localDateTime(state.startedAt),ep=localDateTime(state.endedAt);$('timeSummary').textContent=sp?(ep?`${sp.time}〜${ep.time}`:`開始 ${sp.time}`):'未開始';
+  $('machineInfoBtn').textContent=info?`台情報：${info}`:'台情報入力';
+  document.querySelectorAll('.playControl').forEach(el=>el.disabled=!playEnabled());$('endSessionBtn').disabled=state.status==='ended'||!state.startedAt;
+  $('endedBanner').hidden=state.status!=='ended';$('newSessionBtn').hidden=state.status!=='ended';
+  if(state.status==='ended')$('endedBanner').textContent=`実戦終了：${ep?ep.full:'—'}　実戦時間 ${durationText(state.startedAt,state.endedAt)}`;
+  renderToday();saveState();
+}
+function renderToday(){
+  $('todayMeta').textContent=`${state.history.length}件`;
+  const box=$('todayList');box.innerHTML='';
+  if(!state.history.length){box.innerHTML='<div class="empty">まだ当たり記録はありません。</div>';return}
+  [...state.history].reverse().forEach((r,revIndex)=>{
+    const originalIndex=state.history.length-1-revIndex;const row=document.createElement('div');row.className='todayRow';
+    row.innerHTML=`<div class="todayNo">#${originalIndex+1}</div><div class="todayMain">${r.games}G</div><div class="todaySub">${r.payout}発</div><div class="todaySub">${r.rounds}R</div><button class="editTiny" type="button" data-edit-hit="${r.id}" ${state.status==='ended'?'disabled':''}>編集</button>`;box.appendChild(row);
+  });
+}
+function incrementAction(action){
+  if(!playEnabled())return;
+  if(action==='open1'){ensureStarted('open1');state.open1++;state.currentG++;state.totalG++}
+  else if(action==='open2'){ensureStarted('open2');state.open2++;state.currentG+=2;state.totalG+=2}
+  else if(action==='normal'){state.normal++}
+  else if(action==='sp'){state.sp++}
+  else if(action==='normalV'){state.normalV++}
+  else if(action==='spV'){state.spV++}
+  render();
+}
+function finalizeHit(rounds,defaultPayout){
+  if(!playEnabled())return;
+  const manual=$('manualPayout').value.trim();const payout=manual===''?int0(defaultPayout):int0(manual);
+  state.history.push({id:makeId(),games:state.currentG,payout,rounds:int0(rounds)});state.currentG=0;$('manualPayout').value='';render();
+}
+function pruneSessions(){
+  const sorted=[...sessions].sort((a,b)=>new Date(b.endedAt||0)-new Date(a.endedAt||0));const counts=new Map();const kept=[];
+  for(const s of sorted){const k=machineKey(s)||'__anon__';const limit=k==='__anon__'?MAX_ANON:MAX_PER_MACHINE;const c=counts.get(k)||0;if(c<limit){kept.push(s);counts.set(k,c+1)}}sessions=kept;
+}
+function endSession(){
+  if(!state.startedAt||state.status==='ended')return;state.endedAt=nowIso();state.status='ended';
+  const snap=sanitizeState(clone(state));sessions=sessions.filter(s=>s.sessionId!==snap.sessionId);sessions.push(snap);pruneSessions();saveSessions();$('endModal').classList.remove('show');render();
+}
+function newSession(){
+  const keep={storeName:state.storeName,machineName:state.machineName,machineNumber:state.machineNumber,ballsPerK:state.ballsPerK};state={...defaultState(),...keep};$('manualPayout').value='';render();
+}
+function openMachine(){
+  $('storeNameInput').value=state.storeName;$('machineNameInput').value=state.machineName;$('machineNumberInput').value=state.machineNumber;$('ballsPerKInput').value=state.ballsPerK;setView('machineView');
+}
+function saveMachine(){
+  state.storeName=$('storeNameInput').value.trim();state.machineName=$('machineNameInput').value.trim();state.machineNumber=$('machineNumberInput').value.trim();state.ballsPerK=Math.max(1,num($('ballsPerKInput').value)||250);render();setView('mainView');
+}
+function renderPast(){
+  $('pastCount').textContent=`${sessions.length}件`;const list=$('savedList');list.innerHTML='';
+  const sorted=[...sessions].sort((a,b)=>new Date(b.endedAt||0)-new Date(a.endedAt||0));
+  if(!sorted.length){list.innerHTML='<div class="empty">保存済み実戦はありません。</div>';return}
+  sorted.forEach(s=>{
+    const st=snapshotStats(s),start=localDateTime(s.startedAt),end=localDateTime(s.endedAt);const info=[s.storeName||'店舗未入力',s.machineName||'機種未入力',s.machineNumber?`${s.machineNumber}番台`:'台番未入力'].join(' / ');
+    const el=document.createElement('div');el.className='savedItem';
+    el.innerHTML=`<div class="savedTop"><div class="savedName">${escapeHtml(info)}</div><div class="savedTime">${start?start.date:'—'}<br>${start?start.time:'—'}〜${end?end.time:'—'}</div></div><div class="savedStats">総G ${st.totalG}G　当たり ${st.hits}回　1k ${st.rate?st.rate.toFixed(2)+'G':'—'}<br>ノーマル ${s.normalV}/${s.normal}　SP ${s.spV}/${s.sp}　実戦 ${durationText(s.startedAt,s.endedAt)}</div><div class="savedActions"><button type="button" data-aggregate-session="${s.sessionId}">この台を集計</button><button type="button" data-detail-session="${s.sessionId}">詳細</button><button class="delete" type="button" data-delete-session="${s.sessionId}">削除</button></div>`;list.appendChild(el);
+  });
+}
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function aggregateExact(store,machine,number){
+  const tmp={storeName:store,machineName:machine,machineNumber:number};const k=machineKey(tmp);const area=$('aggregateArea');
+  if(!k){area.innerHTML='<div class="subtle">店舗名・機種名・台番号をすべて入力してください。</div>';return}
+  const matches=sessions.filter(s=>machineKey(s)===k).sort((a,b)=>new Date(b.endedAt||0)-new Date(a.endedAt||0)).slice(0,50);
+  if(!matches.length){area.innerHTML='<div class="subtle">一致する保存済み実戦はありません。</div>';return}
+  const total={games:0,hits:0,payout:0,normal:0,sp:0,normalV:0,spV:0,weightedUsedBalls:0,bpkWeightedGames:0};let rateGameSum=0,rateUsedKSum=0;
+  matches.forEach(s=>{const st=snapshotStats(s);total.games+=st.totalG;total.hits+=st.hits;total.payout+=st.payout;total.normal+=s.normal;total.sp+=s.sp;total.normalV+=s.normalV;total.spV+=s.spV;const bpk=Math.max(1,num(s.ballsPerK)||250);const used=num(s.cash)/1000*bpk+st.payout-num(s.currentBalls);if(used>0){rateGameSum+=st.totalG;rateUsedKSum+=used/bpk}});
+  const rate=rateUsedKSum>0?rateGameSum/rateUsedKSum:null;const jackpot=total.hits>0?total.games/total.hits:null;
+  area.innerHTML=`<div class="subtle" style="margin-bottom:7px">直近${matches.length}実戦の合計</div><div class="aggregate"><div class="aggCell"><div class="k">総ゲーム</div><div class="v">${total.games}G</div></div><div class="aggCell"><div class="k">総当たり</div><div class="v">${total.hits}回</div></div><div class="aggCell"><div class="k">1000円あたり</div><div class="v">${rate?rate.toFixed(2)+'G':'—'}</div></div><div class="aggCell"><div class="k">大当たり確率</div><div class="v">${jackpot?'1/'+jackpot.toFixed(2).replace(/\.00$/,''):'—'}</div></div><div class="aggCell"><div class="k">ノーマル</div><div class="v">${total.normalV}/${total.normal} ${oneIn(total.normalV,total.normal)}</div></div><div class="aggCell"><div class="k">SP</div><div class="v">${total.spV}/${total.sp} ${oneIn(total.spV,total.sp)}</div></div></div>`;
+}
+function showSessionDetail(s){
+  const st=snapshotStats(s),a=localDateTime(s.startedAt),b=localDateTime(s.endedAt);const lines=(s.history||[]).map((r,i)=>`${i+1}. ${r.games}G / ${r.payout}発 / ${r.rounds}R`).join('\n')||'当たり記録なし';
+  alert(`${[s.storeName,s.machineName,s.machineNumber?`${s.machineNumber}番台`:null].filter(Boolean).join(' / ')||'台情報なし'}\n${a?a.full:'—'} 〜 ${b?b.time:'—'}\n実戦時間：${durationText(s.startedAt,s.endedAt)}\n総G：${st.totalG}G　当たり：${st.hits}回\n1k：${st.rate?st.rate.toFixed(2)+'G':'—'}\nノーマル：${s.normalV}/${s.normal}\nSP：${s.spV}/${s.sp}\n\n${lines}`)
+}
+
+// main listeners
+$('machineInfoBtn').addEventListener('click',openMachine);
+$('plus500Btn').addEventListener('click',()=>{if(playEnabled()){state.cash+=500;render()}});
+$('cashInput').addEventListener('input',()=>{if(playEnabled()){state.cash=Math.max(0,num($('cashInput').value));saveState();renderStatsOnly()}});
+$('currentBallsInput').addEventListener('input',()=>{if(playEnabled()){state.currentBalls=Math.max(0,num($('currentBallsInput').value));saveState();renderStatsOnly()}});
+function renderStatsOnly(){const st=snapshotStats(state);$('totalGStat').textContent=`${st.totalG}G`;$('totalHitStat').textContent=`${st.hits}回`;$('rate1kStat').textContent=formatRate(st.rate);$('jackpotStat').textContent=st.jackpot?`1/${st.jackpot.toFixed(2).replace(/\.00$/,'')}`:'—';$('avgPerRound').textContent=formatPerRound(st.avgPerRound)}
+document.querySelectorAll('[data-action]').forEach(b=>b.addEventListener('click',()=>incrementAction(b.dataset.action)));
+document.querySelectorAll('[data-round]').forEach(b=>b.addEventListener('click',()=>finalizeHit(b.dataset.round,b.dataset.defaultPayout)));
+$('endSessionBtn').addEventListener('click',()=>{if(state.startedAt&&state.status!=='ended')$('endModal').classList.add('show')});
+$('cancelEndBtn').addEventListener('click',()=>$('endModal').classList.remove('show'));
+$('confirmEndBtn').addEventListener('click',endSession);
+$('newSessionBtn').addEventListener('click',newSession);
+$('pastRecordsBtn').addEventListener('click',()=>{renderPast();setView('pastView')});
+document.querySelectorAll('[data-back-main]').forEach(b=>b.addEventListener('click',()=>setView('mainView')));
+$('saveMachineBtn').addEventListener('click',saveMachine);
+$('useCurrentMachineBtn').addEventListener('click',()=>{$('filterStore').value=state.storeName;$('filterMachine').value=state.machineName;$('filterNumber').value=state.machineNumber});
+$('aggregateBtn').addEventListener('click',()=>aggregateExact($('filterStore').value,$('filterMachine').value,$('filterNumber').value));
+$('savedList').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const id=b.dataset.aggregateSession||b.dataset.detailSession||b.dataset.deleteSession;if(!id)return;const s=sessions.find(x=>x.sessionId===id);if(!s)return;if(b.dataset.aggregateSession){$('filterStore').value=s.storeName;$('filterMachine').value=s.machineName;$('filterNumber').value=s.machineNumber;aggregateExact(s.storeName,s.machineName,s.machineNumber);window.scrollTo(0,0)}else if(b.dataset.detailSession)showSessionDetail(s);else if(b.dataset.deleteSession){if(confirm('この実戦記録を削除しますか？')){sessions=sessions.filter(x=>x.sessionId!==id);saveSessions();renderPast()}}});
+
+// hit edit
+$('todayList').addEventListener('click',e=>{const b=e.target.closest('[data-edit-hit]');if(!b)return;const r=state.history.find(x=>x.id===b.dataset.editHit);if(!r)return;editingHitId=r.id;$('editGames').value=r.games;$('editPayout').value=r.payout;$('editRounds').value=r.rounds;$('editModal').classList.add('show')});
+$('closeEditBtn').addEventListener('click',()=>$('editModal').classList.remove('show'));
+$('saveHitBtn').addEventListener('click',()=>{const r=state.history.find(x=>x.id===editingHitId);if(!r)return;const oldG=r.games;r.games=int0($('editGames').value);r.payout=int0($('editPayout').value);r.rounds=int0($('editRounds').value);state.totalG=Math.max(0,state.totalG-oldG+r.games);$('editModal').classList.remove('show');render()});
+$('deleteHitBtn').addEventListener('click',()=>{const r=state.history.find(x=>x.id===editingHitId);if(!r)return;if(confirm('この当たり記録を削除しますか？')){state.totalG=Math.max(0,state.totalG-r.games);state.history=state.history.filter(x=>x.id!==editingHitId);$('editModal').classList.remove('show');render()}});
+$('endModal').addEventListener('click',e=>{if(e.target===$('endModal'))$('endModal').classList.remove('show')});
+$('editModal').addEventListener('click',e=>{if(e.target===$('editModal'))$('editModal').classList.remove('show')});
+
+render();
+})();
+</script>
+</body>
+</html>
